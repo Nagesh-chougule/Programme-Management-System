@@ -1,165 +1,549 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Programme Management System</title>
-<style>
-:root{--bg:#f3f5f8;--card:#fff;--fg:#1b2233;--mut:#5d667a;--ac:#243b8a;--acf:#fff;--bd:#d9dee8;--ok:#17703f;--bad:#b0261e;--warn:#9a5b00;--soft:#e8ecf7;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10141f;--card:#192032;--fg:#e8ebf4;--mut:#9aa4bd;--ac:#8fa6ff;--acf:#10141f;--bd:#2b3550;--ok:#5fd08f;--bad:#ff8a80;--warn:#f0b35a;--soft:#222b45;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#10141f;--card:#192032;--fg:#e8ebf4;--mut:#9aa4bd;--ac:#8fa6ff;--acf:#10141f;--bd:#2b3550;--ok:#5fd08f;--bad:#ff8a80;--warn:#f0b35a;--soft:#222b45;color-scheme:dark}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-h1,h2,h3{font-family:Georgia,"Times New Roman",serif;font-weight:700;margin:0 0 .5rem}
-header{display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;justify-content:space-between;padding:.9rem 1.25rem;background:var(--ac);color:var(--acf)}
-header h1{font-size:1.15rem;margin:0}header select{padding:.35rem;border-radius:6px}
-nav{display:flex;flex-wrap:wrap;gap:.25rem;padding:.5rem 1.25rem;background:var(--card);border-bottom:1px solid var(--bd)}
-nav button,.tabs button{background:none;border:0;padding:.45rem .8rem;border-radius:6px;color:var(--fg);cursor:pointer;font:inherit}
-nav button.on,.tabs button.on{background:var(--soft);color:var(--ac);font-weight:600}
-main{max-width:1050px;margin:0 auto;padding:1.25rem}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:1rem;margin-bottom:1rem}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.75rem}
-.stat{font:700 1.8rem Georgia,serif;color:var(--ac)}.mut{color:var(--mut);font-size:.85rem}
-.tw{overflow-x:auto}table{width:100%;border-collapse:collapse}th,td{padding:.45rem .6rem;border-bottom:1px solid var(--bd);text-align:left;vertical-align:top}th{font-weight:600;color:var(--mut);font-size:.85rem}
-input,select,textarea{width:100%;padding:.45rem;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--fg);font:inherit}
-label{display:block;font-size:.85rem;color:var(--mut);margin:.5rem 0 .15rem}
-.f2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0 .9rem}
-.btn{background:var(--ac);color:var(--acf);border:0;border-radius:6px;padding:.5rem .9rem;cursor:pointer;font:inherit;margin:.15rem .25rem .15rem 0}
-.btn.o{background:none;color:var(--ac);border:1px solid var(--ac)}.btn.d{background:var(--bad);color:var(--bg)}.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,nav button:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
-.b{display:inline-block;padding:.1rem .55rem;border-radius:99px;font-size:.78rem;background:var(--soft);color:var(--ac)}.b.ok{color:var(--ok)}.b.bad{color:var(--bad)}.b.w{color:var(--warn)}
-.rail{display:flex;gap:2px;margin:.5rem 0 1rem;overflow-x:auto}.rail span{flex:1;min-width:84px;padding:.35rem .4rem;font-size:.75rem;text-align:center;background:var(--soft);color:var(--mut);border-radius:4px}.rail span.done{background:var(--ac);color:var(--acf)}.rail span.cur{outline:2px solid var(--ac);color:var(--fg);font-weight:700}
-.tabs{display:flex;flex-wrap:wrap;gap:.25rem;margin-bottom:1rem}
-.hist{border-left:3px solid var(--bd);padding-left:.75rem;margin:.4rem 0}
-#ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;overflow:auto;padding:1rem;z-index:9}#ov.on{display:block}
-#doc{max-width:760px;margin:0 auto;background:#fff;color:#111;padding:2rem;border-radius:6px;font-family:Georgia,serif}
-#doc h1,#doc h2{color:#1a2a6c}.cert{border:8px double #1a2a6c;padding:2rem;text-align:center}
-@media print{body>*:not(#ov){display:none!important}#ov{position:static;background:none;padding:0}.noprint{display:none!important}}
-</style></head><body>
-<header><h1>Programme Management System</h1><label style="margin:0;color:inherit">Signed in as <select id="role" onchange="role=this.value;view='dash';render()"></select></label></header>
-<nav id="nav"></nav><main id="app"></main>
-<div id="ov"><div class="noprint" style="max-width:760px;margin:0 auto .5rem"><button class="btn" onclick="window.print()">Print or save as PDF</button><button class="btn o" style="background:var(--card)" onclick="$('#ov').classList.remove('on')">Close</button></div><div id="doc"></div></div>
-<script>
-const $=q=>document.querySelector(q),KEY="pms-v1";
-const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const ROLES=["Coordinator","HOD","Dean","Registrar","Finance","Admin"];
-const ORD=["Draft","Returned","Rejected","Under Approval","Approved","Registration Open","Ongoing","Completed","Closed"];
-const RAIL=["Draft","Under Approval","Approved","Registration Open","Ongoing","Completed","Closed"];
-const CATS=["FDP","SDP","Training","Workshop","Seminar","Conference","Guest Lecture","Short-Term Course","Certification","Other"];
-let S,role="Coordinator",view="dash",sel=null,tab="Overview";
-function load(){try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){S=null}
- if(!S)S={chain:["HOD","Dean","Registrar","Finance"],progs:[],audit:[],n:1}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
-const P=id=>S.progs.find(p=>p.id===id),now=()=>new Date().toLocaleString();
-const apd=p=>ORD.indexOf(p.status)>=4;
-const days=p=>{const d=Math.round((new Date(p.end)-new Date(p.start))/864e5)+1;return d>0?d:1};
-function log(p,m){S.audit.unshift({t:now(),r:role,m:(p?p.title+": ":"")+m});save()}
-const bc=s=>s==="Approved"||s==="Closed"||s==="Completed"?"ok":s==="Rejected"?"bad":s==="Returned"||s==="Under Approval"?"w":"";
-function go(v,id){view=v;if(id)sel=id;tab="Overview";render()}
-function render(){
- $("#role").innerHTML=ROLES.map(r=>`<option ${r===role?"selected":""}>${r}</option>`).join("");
- const nv=[["dash","Dashboard"],["list","Programmes"],["form","New proposal"],["settings","Settings"],["audit","Audit log"]];
- $("#nav").innerHTML=nv.map(([k,l])=>`<button class="${view===k?"on":""}" onclick="${k==="form"?"sel=null;":""}go('${k}')">${l}</button>`).join("");
- $("#app").innerHTML=({dash,list,form,settings,audit,detail})[view]();
-}
-function pend(){return S.progs.filter(p=>p.status==="Under Approval"&&S.chain[p.step]===role)}
-function dash(){
- const c=s=>S.progs.filter(p=>p.status===s).length,pe=pend();
- return `<h2>Dashboard</h2><div class="grid">${[["Programmes",S.progs.length],["Under approval",c("Under Approval")],["Running or open",c("Registration Open")+c("Ongoing")],["Closed",c("Closed")]].map(([l,v])=>`<div class="card"><div class="stat">${v}</div><div class="mut">${l}</div></div>`).join("")}</div>
- <div class="card"><h3>Waiting for you (${esc(role)})</h3>${pe.length?pe.map(p=>`<p><a href="#" onclick="go('detail','${p.id}');tab='Approval';render();return false">${esc(p.title)}</a> <span class="mut">${esc(p.dept)}</span></p>`).join(""):`<p class="mut">No proposals are waiting for ${esc(role)} approval.</p>`}</div>
- ${S.progs.length?"":`<div class="card"><p>No programmes yet. Choose <b>New proposal</b> to create the first one.</p><button class="btn" onclick="sel=null;go('form')">Create proposal</button></div>`}`}
-function list(){
- return `<h2>Programmes</h2><div class="card tw"><table><tr><th>Title</th><th>Type</th><th>Department</th><th>Dates</th><th>Status</th><th></th></tr>${S.progs.map(p=>`<tr><td>${esc(p.title)}</td><td>${esc(p.cat)}</td><td>${esc(p.dept)}</td><td>${esc(p.start)} to ${esc(p.end)}</td><td><span class="b ${bc(p.status)}">${p.status}${p.status==="Under Approval"?" ("+S.chain[p.step]+")":""}</span></td><td><button class="btn o" onclick="go('detail','${p.id}')">Open</button></td></tr>`).join("")||`<tr><td colspan="6" class="mut">No programmes yet.</td></tr>`}</table></div>`}
-const FL=[["title","Programme title"],["cat","Category","sel"],["dept","Organizing department"],["coord","Coordinator"],["cocoord","Co-coordinator"],["mode","Mode","sel2"],["start","Start date","date"],["end","End date","date"],["hours","Total hours","number"],["venue","Venue"],["seats","Expected participants","number"],["fee","Registration fee (₹)","number"],["aud","Target audience"],["elig","Eligibility criteria"],["bexp","Estimated expenditure (₹)","number"],["binc","Estimated revenue (₹)","number"]];
-const TA=[["obj","Objectives"],["out","Expected outcomes"],["desc","Description and methodology"],["rp","Resource persons (one per line)"],["sched","Tentative schedule"],["req","Technical, infrastructure and hospitality needs"]];
-function form(){
- const p=sel?P(sel):{};
- return `<h2>${sel?"Edit proposal":"New proposal"}</h2><div class="card"><div class="f2">${FL.map(([k,l,t])=>`<div><label for="f_${k}">${l}</label>${t==="sel"?`<select id="f_${k}">${CATS.map(c=>`<option ${p[k]===c?"selected":""}>${c}</option>`).join("")}</select>`:t==="sel2"?`<select id="f_${k}">${["Offline","Online","Hybrid"].map(c=>`<option ${p[k]===c?"selected":""}>${c}</option>`).join("")}</select>`:`<input id="f_${k}" type="${t||"text"}" value="${esc(p[k])}">`}</div>`).join("")}</div>
- ${TA.map(([k,l])=>`<label for="f_${k}">${l}</label><textarea id="f_${k}" rows="3">${esc(p[k])}</textarea>`).join("")}
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Programme Management System</title>
+    <style>
+        :root {
+            --bg: #f3f5f8;
+            --card: #fff;
+            --fg: #1b2233;
+            --mut: #5d667a;
+            --ac: #243b8a;
+            --acf: #fff;
+            --bd: #d9dee8;
+            --ok: #17703f;
+            --bad: #b0261e;
+            --warn: #9a5b00;
+            --soft: #e8ecf7;
+            color-scheme: light;
+            box-sizing: border-box;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px)
+        }
+
+        @media(prefers-color-scheme:dark) {
+            :root:not([data-theme="light"]) {
+                --bg: #10141f;
+                --card: #192032;
+                --fg: #e8ebf4;
+                --mut: #9aa4bd;
+                --ac: #8fa6ff;
+                --acf: #10141f;
+                --bd: #2b3550;
+                --ok: #5fd08f;
+                --bad: #ff8a80;
+                --warn: #f0b35a;
+                --soft: #222b45;
+                color-scheme: dark
+            }
+        }
+
+        :root[data-theme="dark"] {
+            --bg: #10141f;
+            --card: #192032;
+            --fg: #e8ebf4;
+            --mut: #9aa4bd;
+            --ac: #8fa6ff;
+            --acf: #10141f;
+            --bd: #2b3550;
+            --ok: #5fd08f;
+            --bad: #ff8a80;
+            --warn: #f0b35a;
+            --soft: #222b45;
+            color-scheme: dark
+        }
+
+        html {
+            scroll-padding-top: env(safe-area-inset-top, 0px)
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--fg);
+            font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: Georgia, "Times New Roman", serif;
+            font-weight: 700;
+            margin: 0 0 .5rem
+        }
+
+        header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .75rem;
+            align-items: center;
+            justify-content: space-between;
+            padding: .9rem 1.25rem;
+            background: var(--ac);
+            color: var(--acf)
+        }
+
+        header h1 {
+            font-size: 1.15rem;
+            margin: 0
+        }
+
+        header label {
+            display: inline;
+            font-size: .85rem;
+            color: inherit;
+            margin: 0
+        }
+
+        header select {
+            width: auto;
+            padding: .35rem .5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            min-width: 120px
+        }
+
+        nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .25rem;
+            padding: .5rem 1.25rem;
+            background: var(--card);
+            border-bottom: 1px solid var(--bd)
+        }
+
+        nav button,
+        .tabs button {
+            background: none;
+            border: 0;
+            padding: .45rem .8rem;
+            border-radius: 6px;
+            color: var(--fg);
+            cursor: pointer;
+            font: inherit
+        }
+
+        nav button.on,
+        .tabs button.on {
+            background: var(--soft);
+            color: var(--ac);
+            font-weight: 600
+        }
+
+        main {
+            max-width: 1050px;
+            margin: 0 auto;
+            padding: 1.25rem
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--bd);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: .75rem
+        }
+
+        .stat {
+            font: 700 1.8rem Georgia, serif;
+            color: var(--ac)
+        }
+
+        .mut {
+            color: var(--mut);
+            font-size: .85rem
+        }
+
+        .tw {
+            overflow-x: auto
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        th,
+        td {
+            padding: .45rem .6rem;
+            border-bottom: 1px solid var(--bd);
+            text-align: left;
+            vertical-align: top
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--mut);
+            font-size: .85rem
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: .45rem;
+            border: 1px solid var(--bd);
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--fg);
+            font: inherit
+        }
+
+        label {
+            display: block;
+            font-size: .85rem;
+            color: var(--mut);
+            margin: .5rem 0 .15rem
+        }
+
+        .f2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0 .9rem
+        }
+
+        .btn {
+            background: var(--ac);
+            color: var(--acf);
+            border: 0;
+            border-radius: 6px;
+            padding: .5rem .9rem;
+            cursor: pointer;
+            font: inherit;
+            margin: .15rem .25rem .15rem 0
+        }
+
+        .btn.o {
+            background: none;
+            color: var(--ac);
+            border: 1px solid var(--ac)
+        }
+
+        .btn.d {
+            background: var(--bad);
+            color: var(--bg)
+        }
+
+        .btn:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible,
+        nav button:focus-visible {
+            outline: 2px solid var(--ac);
+            outline-offset: 2px
+        }
+
+        .b {
+            display: inline-block;
+            padding: .1rem .55rem;
+            border-radius: 99px;
+            font-size: .78rem;
+            background: var(--soft);
+            color: var(--ac)
+        }
+
+        .b.ok {
+            color: var(--ok)
+        }
+
+        .b.bad {
+            color: var(--bad)
+        }
+
+        .b.w {
+            color: var(--warn)
+        }
+
+        .rail {
+            display: flex;
+            gap: 2px;
+            margin: .5rem 0 1rem;
+            overflow-x: auto
+        }
+
+        .rail span {
+            flex: 1;
+            min-width: 84px;
+            padding: .35rem .4rem;
+            font-size: .75rem;
+            text-align: center;
+            background: var(--soft);
+            color: var(--mut);
+            border-radius: 4px
+        }
+
+        .rail span.done {
+            background: var(--ac);
+            color: var(--acf)
+        }
+
+        .rail span.cur {
+            outline: 2px solid var(--ac);
+            color: var(--fg);
+            font-weight: 700
+        }
+
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .25rem;
+            margin-bottom: 1rem
+        }
+
+        .hist {
+            border-left: 3px solid var(--bd);
+            padding-left: .75rem;
+            margin: .4rem 0
+        }
+
+        #ov {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .55);
+            display: none;
+            overflow: auto;
+            padding: 1rem;
+            z-index: 9
+        }
+
+        #ov.on {
+            display: block
+        }
+
+        #doc {
+            max-width: 760px;
+            margin: 0 auto;
+            background: #fff;
+            color: #111;
+            padding: 2rem;
+            border-radius: 6px;
+            font-family: Georgia, serif
+        }
+
+        #doc h1,
+        #doc h2 {
+            color: #1a2a6c
+        }
+
+        .cert {
+            border: 8px double #1a2a6c;
+            padding: 2rem;
+            text-align: center
+        }
+
+        @media print {
+            body>*:not(#ov) {
+                display: none !important
+            }
+
+            #ov {
+                position: static;
+                background: none;
+                padding: 0
+            }
+
+            .noprint {
+                display: none !important
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Programme Management System</h1><label style="margin:0;color:inherit">Signed in as <select id="role"
+                onchange="switchRole(this.value)"></select></label>
+    </header>
+    <nav id="nav"></nav>
+    <main id="app"></main>
+    <div id="ov">
+        <div class="noprint" style="max-width:760px;margin:0 auto .5rem"><button class="btn"
+                onclick="window.print()">Print or save as PDF</button><button class="btn o"
+                style="background:var(--card)" onclick="$('#ov').classList.remove('on')">Close</button></div>
+        <div id="doc"></div>
+    </div>
+    <script>
+        const $ = q => document.querySelector(q), KEY = "pms-v1";
+        const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+        const ROLES = ["Coordinator", "HOD", "Dean", "Registrar", "Finance", "Admin"];
+        const ORD = ["Draft", "Returned", "Rejected", "Under Approval", "Approved", "Registration Open", "Ongoing", "Completed", "Closed"];
+        const RAIL = ["Draft", "Under Approval", "Approved", "Registration Open", "Ongoing", "Completed", "Closed"];
+        const CATS = ["FDP", "SDP", "Training", "Workshop", "Seminar", "Conference", "Guest Lecture", "Short-Term Course", "Certification", "Other"];
+        let S, role = "Coordinator", view = "dash", sel = null, tab = "Overview";
+        function load() {
+            try { S = JSON.parse(localStorage.getItem(KEY)) } catch (e) { S = null }
+            if (!S) S = { chain: ["HOD", "Dean", "Registrar", "Finance"], progs: [], audit: [], n: 1 }
+        }
+        function save() { try { localStorage.setItem(KEY, JSON.stringify(S)) } catch (e) { } }
+        const P = id => S.progs.find(p => p.id === id), now = () => new Date().toLocaleString();
+        const apd = p => ORD.indexOf(p.status) >= 4;
+        const days = p => { const d = Math.round((new Date(p.end) - new Date(p.start)) / 864e5) + 1; return d > 0 ? d : 1 };
+        function log(p, m) { S.audit.unshift({ t: now(), r: role, m: (p ? p.title + ": " : "") + m }); save() }
+        const bc = s => s === "Approved" || s === "Closed" || s === "Completed" ? "ok" : s === "Rejected" ? "bad" : s === "Returned" || s === "Under Approval" ? "w" : "";
+        function go(v, id) { view = v; if (id) sel = id; tab = "Overview"; render() }
+        function switchRole(r) { role = r; view = "dash"; render() }
+        function render() {
+            const rs = $("#role");
+            if (!rs.options.length) {
+                rs.innerHTML = ROLES.map(r => `<option value="${r}">${r}</option>`).join("");
+            }
+            rs.value = role;
+            const nv = [["dash", "Dashboard"], ["list", "Programmes"], ["form", "New proposal"], ["settings", "Settings"], ["audit", "Audit log"]];
+            $("#nav").innerHTML = nv.map(([k, l]) => `<button class="${view === k ? "on" : ""}" onclick="${k === "form" ? "sel=null;" : ""}go('${k}')">${l}</button>`).join("");
+            $("#app").innerHTML = ({ dash, list, form, settings, audit, detail })[view]();
+        }
+        function pend() { return S.progs.filter(p => p.status === "Under Approval" && S.chain[p.step] === role) }
+        function dash() {
+            const c = s => S.progs.filter(p => p.status === s).length, pe = pend();
+            return `<h2>Dashboard</h2><div class="grid">${[["Programmes", S.progs.length], ["Under approval", c("Under Approval")], ["Running or open", c("Registration Open") + c("Ongoing")], ["Closed", c("Closed")]].map(([l, v]) => `<div class="card"><div class="stat">${v}</div><div class="mut">${l}</div></div>`).join("")}</div>
+ <div class="card"><h3>Waiting for you (${esc(role)})</h3>${pe.length ? pe.map(p => `<p><a href="#" onclick="go('detail','${p.id}');tab='Approval';render();return false">${esc(p.title)}</a> <span class="mut">${esc(p.dept)}</span></p>`).join("") : `<p class="mut">No proposals are waiting for ${esc(role)} approval.</p>`}</div>
+ ${S.progs.length ? "" : `<div class="card"><p>No programmes yet. Choose <b>New proposal</b> to create the first one.</p><button class="btn" onclick="sel=null;go('form')">Create proposal</button></div>`}`
+        }
+        function list() {
+            return `<h2>Programmes</h2><div class="card tw"><table><tr><th>Title</th><th>Type</th><th>Department</th><th>Dates</th><th>Status</th><th></th></tr>${S.progs.map(p => `<tr><td>${esc(p.title)}</td><td>${esc(p.cat)}</td><td>${esc(p.dept)}</td><td>${esc(p.start)} to ${esc(p.end)}</td><td><span class="b ${bc(p.status)}">${p.status}${p.status === "Under Approval" ? " (" + S.chain[p.step] + ")" : ""}</span></td><td><button class="btn o" onclick="go('detail','${p.id}')">Open</button></td></tr>`).join("") || `<tr><td colspan="6" class="mut">No programmes yet.</td></tr>`}</table></div>`
+        }
+        const FL = [["title", "Programme title"], ["cat", "Category", "sel"], ["dept", "Organizing department"], ["coord", "Coordinator"], ["cocoord", "Co-coordinator"], ["mode", "Mode", "sel2"], ["start", "Start date", "date"], ["end", "End date", "date"], ["hours", "Total hours", "number"], ["venue", "Venue"], ["seats", "Expected participants", "number"], ["fee", "Registration fee (₹)", "number"], ["aud", "Target audience"], ["elig", "Eligibility criteria"], ["bexp", "Estimated expenditure (₹)", "number"], ["binc", "Estimated revenue (₹)", "number"]];
+        const TA = [["obj", "Objectives"], ["out", "Expected outcomes"], ["desc", "Description and methodology"], ["rp", "Resource persons (one per line)"], ["sched", "Tentative schedule"], ["req", "Technical, infrastructure and hospitality needs"]];
+        function form() {
+            const p = sel ? P(sel) : {};
+            return `<h2>${sel ? "Edit proposal" : "New proposal"}</h2><div class="card"><div class="f2">${FL.map(([k, l, t]) => `<div><label for="f_${k}">${l}</label>${t === "sel" ? `<select id="f_${k}">${CATS.map(c => `<option ${p[k] === c ? "selected" : ""}>${c}</option>`).join("")}</select>` : t === "sel2" ? `<select id="f_${k}">${["Offline", "Online", "Hybrid"].map(c => `<option ${p[k] === c ? "selected" : ""}>${c}</option>`).join("")}</select>` : `<input id="f_${k}" type="${t || "text"}" value="${esc(p[k])}">`}</div>`).join("")}</div>
+ ${TA.map(([k, l]) => `<label for="f_${k}">${l}</label><textarea id="f_${k}" rows="3">${esc(p[k])}</textarea>`).join("")}
  <p><button class="btn" onclick="saveP()">Save draft</button></p></div>`}
-function saveP(){
- const g=k=>$("#f_"+k).value,o={};FL.concat(TA).forEach(([k])=>o[k]=g(k));
- if(!o.title||!o.start||!o.end){alert("Enter a title, start date and end date before saving.");return}
- if(o.end<o.start){alert("The end date must be on or after the start date.");return}
- let p=sel&&P(sel);
- if(p){Object.assign(p,o);p.rev=(p.rev||1)+1;log(p,"Proposal revised (revision "+p.rev+")")}
- else{p=Object.assign({id:"P"+S.n++,status:"Draft",step:0,rev:1,hist:[],parts:[],att:{},fb:[],fin:[],comms:[]},o);S.progs.push(p);log(p,"Proposal created")}
- save();go("detail",p.id)}
-function settings(){
- if(role!=="Admin")return `<h2>Settings</h2><div class="card"><p>Only the Admin role can change the approval hierarchy. Switch role at the top right.</p></div>`;
- return `<h2>Approval hierarchy</h2><div class="card"><p class="mut">Set the order of approving authorities after the Coordinator. Use roles from: HOD, Dean, Registrar, Finance.</p><label for="chain">Approval chain (comma-separated)</label><input id="chain" value="${esc(S.chain.join(", "))}"><p><button class="btn" onclick="setChain()">Save hierarchy</button> <button class="btn o" onclick="if(confirm('Delete all data in this browser?')){S=null;try{localStorage.removeItem(KEY)}catch(e){}load();go('dash')}">Reset all data</button></p></div>`}
-function setChain(){const c=$("#chain").value.split(",").map(s=>s.trim()).filter(Boolean),ok=["HOD","Dean","Registrar","Finance"];
- if(!c.length||c.some(x=>!ok.includes(x))){alert("Use only HOD, Dean, Registrar and Finance, separated by commas.");return}
- S.chain=c;log(null,"Approval chain set to "+c.join(" → "));alert("Approval hierarchy saved.")}
-function audit(){return `<h2>Audit log</h2><div class="card">${S.audit.map(a=>`<div class="hist"><b>${esc(a.r)}</b> ${esc(a.m)}<div class="mut">${a.t}</div></div>`).join("")||`<p class="mut">Actions will be recorded here.</p>`}</div>`}
-function detail(){
- const p=P(sel);if(!p)return "<p>Programme not found.</p>";
- const ri=Math.max(0,RAIL.indexOf(p.status==="Returned"||p.status==="Rejected"?"Draft":p.status));
- const T=["Overview","Approval","Publicity","Registration","Attendance","Feedback","Finance","Certificates"];
- return `<h2>${esc(p.title)}</h2><div class="rail">${RAIL.map((s,i)=>`<span class="${i<ri?"done":i===ri?"cur":""}">${s}</span>`).join("")}</div>
- <div class="tabs">${T.map(t=>`<button class="${tab===t?"on":""}" onclick="tab='${t}';render()">${t}</button>`).join("")}</div>${tabs[tab](p)}`}
-const gate=p=>apd(p)?"":`<div class="card"><p>This step opens after the proposal is fully approved. Current status: <b>${p.status}</b>.</p></div>`;
-const tabs={
-Overview(p){const ed=(p.status==="Draft"||p.status==="Returned")&&role==="Coordinator";
- const nx={"Registration Open":["Start programme","Ongoing"],"Ongoing":["Mark as completed","Completed"],"Completed":["Close programme","Closed"]}[p.status];
- return `<div class="card"><div class="f2">${FL.map(([k,l])=>`<div><div class="mut">${l}</div>${esc(p[k])||"-"}</div>`).join("")}</div><p class="mut">Revision ${p.rev}. Duration ${days(p)} day(s).</p>
+        function saveP() {
+            const g = k => $("#f_" + k).value, o = {}; FL.concat(TA).forEach(([k]) => o[k] = g(k));
+            if (!o.title || !o.start || !o.end) { alert("Enter a title, start date and end date before saving."); return }
+            if (o.end < o.start) { alert("The end date must be on or after the start date."); return }
+            let p = sel && P(sel);
+            if (p) { Object.assign(p, o); p.rev = (p.rev || 1) + 1; log(p, "Proposal revised (revision " + p.rev + ")") }
+            else { p = Object.assign({ id: "P" + S.n++, status: "Draft", step: 0, rev: 1, hist: [], parts: [], att: {}, fb: [], fin: [], comms: [] }, o); S.progs.push(p); log(p, "Proposal created") }
+            save(); go("detail", p.id)
+        }
+        function settings() {
+            if (role !== "Admin") return `<h2>Settings</h2><div class="card"><p>Only the Admin role can change the approval hierarchy. Switch role at the top right.</p></div>`;
+            return `<h2>Approval hierarchy</h2><div class="card"><p class="mut">Set the order of approving authorities after the Coordinator. Use roles from: HOD, Dean, Registrar, Finance.</p><label for="chain">Approval chain (comma-separated)</label><input id="chain" value="${esc(S.chain.join(", "))}"><p><button class="btn" onclick="setChain()">Save hierarchy</button> <button class="btn o" onclick="if(confirm('Delete all data in this browser?')){S=null;try{localStorage.removeItem(KEY)}catch(e){}load();go('dash')}">Reset all data</button></p></div>`
+        }
+        function setChain() {
+            const c = $("#chain").value.split(",").map(s => s.trim()).filter(Boolean), ok = ["HOD", "Dean", "Registrar", "Finance"];
+            if (!c.length || c.some(x => !ok.includes(x))) { alert("Use only HOD, Dean, Registrar and Finance, separated by commas."); return }
+            S.chain = c; log(null, "Approval chain set to " + c.join(" → ")); alert("Approval hierarchy saved.")
+        }
+        function audit() { return `<h2>Audit log</h2><div class="card">${S.audit.map(a => `<div class="hist"><b>${esc(a.r)}</b> ${esc(a.m)}<div class="mut">${a.t}</div></div>`).join("") || `<p class="mut">Actions will be recorded here.</p>`}</div>` }
+        function detail() {
+            const p = P(sel); if (!p) return "<p>Programme not found.</p>";
+            const ri = Math.max(0, RAIL.indexOf(p.status === "Returned" || p.status === "Rejected" ? "Draft" : p.status));
+            const T = ["Overview", "Approval", "Publicity", "Registration", "Attendance", "Feedback", "Finance", "Certificates"];
+            return `<h2>${esc(p.title)}</h2><div class="rail">${RAIL.map((s, i) => `<span class="${i < ri ? "done" : i === ri ? "cur" : ""}">${s}</span>`).join("")}</div>
+ <div class="tabs">${T.map(t => `<button class="${tab === t ? "on" : ""}" onclick="tab='${t}';render()">${t}</button>`).join("")}</div>${tabs[tab](p)}`
+        }
+        const gate = p => apd(p) ? "" : `<div class="card"><p>This step opens after the proposal is fully approved. Current status: <b>${p.status}</b>.</p></div>`;
+        const tabs = {
+            Overview(p) {
+                const ed = (p.status === "Draft" || p.status === "Returned") && role === "Coordinator";
+                const nx = { "Registration Open": ["Start programme", "Ongoing"], "Ongoing": ["Mark as completed", "Completed"], "Completed": ["Close programme", "Closed"] }[p.status];
+                return `<div class="card"><div class="f2">${FL.map(([k, l]) => `<div><div class="mut">${l}</div>${esc(p[k]) || "-"}</div>`).join("")}</div><p class="mut">Revision ${p.rev}. Duration ${days(p)} day(s).</p>
  <button class="btn o" onclick="showProposal()">Proposal document</button><button class="btn o" onclick="dup()">Duplicate</button>
- ${ed?`<button class="btn o" onclick="go('form')">Edit</button><button class="btn" onclick="submitP()">Submit for approval</button>`:""}
- ${nx&&role==="Coordinator"?`<button class="btn" onclick="adv('${nx[1]}')">${nx[0]}</button>`:""}</div>`},
-Approval(p){
- const my=p.status==="Under Approval"&&S.chain[p.step]===role;
- return `<div class="card"><p>Chain: ${S.chain.map((r,i)=>`<span class="b ${p.status==="Under Approval"&&i===p.step?"w":apd(p)||i<p.step?"ok":""}">${r}</span>`).join(" → ")}</p>
- ${my?`<label for="cm">Comment</label><textarea id="cm" rows="2"></textarea><button class="btn" onclick="act('Approved')">Approve and forward</button><button class="btn o" onclick="act('Returned')">Return for modification</button><button class="btn d" onclick="act('Rejected')">Reject</button>`:`<p class="mut">${p.status==="Under Approval"?"Waiting for "+S.chain[p.step]+".":"Status: "+p.status+"."}</p>`}</div>
- <div class="card"><h3>Approval history</h3>${p.hist.map(h=>`<div class="hist"><b>${h.r}</b>: ${h.a} <span class="mut">${h.t}</span><br>${esc(h.c)}</div>`).join("")||`<p class="mut">No actions recorded yet.</p>`}</div>
- ${apd(p)?`<div class="card"><button class="btn o" onclick="showLetter()">Approval letter and office order</button></div>`:""}`},
-Publicity(p){if(!apd(p))return gate(p);
- const t=`${p.title}\n${p.start} to ${p.end} (${p.mode}) at ${p.venue}\nFor: ${p.aud}\nFee: ₹${p.fee||0}\nOrganized by ${p.dept}. Coordinator: ${p.coord}.`;
- const ch=["Email","WhatsApp","SMS","Website","LinkedIn","Facebook","Instagram"];
- return `<div class="card"><h3>Announcement text</h3><textarea rows="6" readonly onclick="this.select()">${esc("You are invited to "+t)}</textarea><p class="mut">Copy this text into each channel, then record it below. Direct publishing needs each platform’s API approval.</p>${ch.map(c=>`<button class="btn o" onclick="shared('${c}')">Mark shared on ${c}</button>`).join("")}</div>
- <div class="card"><h3>Communication log</h3>${p.comms.map(c=>`<div class="hist">${c.c} <span class="mut">${c.t}</span></div>`).join("")||`<p class="mut">Nothing shared yet.</p>`}</div>`},
-Registration(p){if(!apd(p))return gate(p);
- const conf=p.parts.filter(x=>x.s==="Confirmed").length;
- return `<div class="card"><p>Seats: ${conf} confirmed of ${p.seats||"unlimited"}. <span class="b">${p.status}</span></p>
- ${p.status==="Approved"&&role==="Coordinator"?`<button class="btn" onclick="adv('Registration Open')">Open registration</button>`:""}</div>
- ${ORD.indexOf(p.status)>=5&&p.status!=="Closed"?`<div class="card"><h3>Register participant</h3><div class="f2"><div><label for="pn">Name</label><input id="pn"></div><div><label for="pe">Email</label><input id="pe" type="email"></div><div><label for="po">Organization</label><input id="po"></div></div><button class="btn" onclick="addPart()">Add registration</button></div>`:""}
- <div class="card tw"><table><tr><th>Name</th><th>Email</th><th>Organization</th><th>Status</th><th></th></tr>${p.parts.map((x,i)=>`<tr><td>${esc(x.n)}</td><td>${esc(x.e)}</td><td>${esc(x.o)}</td><td><span class="b ${x.s==="Confirmed"?"ok":"w"}">${x.s}</span></td><td>${role==="Coordinator"&&x.s!=="Confirmed"?`<button class="btn o" onclick="conf(${i})">Confirm</button>`:""}</td></tr>`).join("")||`<tr><td colspan="5" class="mut">No registrations yet.</td></tr>`}</table></div>`},
-Attendance(p){if(!apd(p))return gate(p);
- const cf=p.parts.map((x,i)=>[x,i]).filter(([x])=>x.s==="Confirmed"),d=days(p);
- return `<div class="card tw"><table><tr><th>Participant</th>${Array.from({length:d},(_,i)=>`<th>Day ${i+1}</th>`).join("")}<th>Attended</th></tr>${cf.map(([x,i])=>`<tr><td>${esc(x.n)}</td>${Array.from({length:d},(_,k)=>`<td><input type="checkbox" style="width:auto" ${(p.att[i]||{})[k]?"checked":""} ${role==="Coordinator"?"":"disabled"} onchange="mark(${i},${k},this.checked)" aria-label="Day ${k+1}"></td>`).join("")}<td>${pct(p,i)}%</td></tr>`).join("")||`<tr><td class="mut">Confirm participants first.</td></tr>`}</table></div>`},
-Feedback(p){if(!apd(p))return gate(p);
- const av=k=>p.fb.length?(p.fb.reduce((a,f)=>a+f[k],0)/p.fb.length).toFixed(1):"-";
- return `<div class="card"><h3>Average ratings (${p.fb.length} responses)</h3><div class="grid"><div>Content <div class="stat">${av("c")}</div></div><div>Resource persons <div class="stat">${av("r")}</div></div><div>Organization <div class="stat">${av("o")}</div></div></div></div>
- <div class="card"><h3>Add feedback</h3><div class="f2">${[["c","Content"],["r","Resource persons"],["o","Organization"]].map(([k,l])=>`<div><label for="fb_${k}">${l} (1 to 5)</label><input id="fb_${k}" type="number" min="1" max="5" value="5"></div>`).join("")}</div><label for="fb_t">Comments</label><textarea id="fb_t" rows="2"></textarea><button class="btn" onclick="addFb()">Save feedback</button>${p.fb.map(f=>f.t?`<div class="hist">${esc(f.t)}</div>`:"").join("")}</div>`},
-Finance(p){if(!apd(p))return gate(p);
- const conf=p.parts.filter(x=>x.s==="Confirmed").length,inc=conf*(+p.fee||0)+p.fin.filter(f=>f.k==="Income").reduce((a,f)=>a+f.a,0),ex=p.fin.filter(f=>f.k==="Expense").reduce((a,f)=>a+f.a,0);
- return `<div class="grid"><div class="card"><div class="mut">Budgeted expenditure</div><div class="stat">₹${+p.bexp||0}</div><div class="mut">Actual: ₹${ex}</div></div><div class="card"><div class="mut">Budgeted revenue</div><div class="stat">₹${+p.binc||0}</div><div class="mut">Actual: ₹${inc} (fees ₹${conf*(+p.fee||0)} + other)</div></div><div class="card"><div class="mut">Balance</div><div class="stat" style="color:${inc-ex<0?"var(--bad)":"var(--ok)"}">₹${inc-ex}</div>${ex>(+p.bexp||0)?`<div class="b bad">Over budget</div>`:""}</div></div>
- ${role==="Finance"||role==="Coordinator"?`<div class="card"><h3>Add entry</h3><div class="f2"><div><label for="fk">Type</label><select id="fk"><option>Expense</option><option>Income</option></select></div><div><label for="fd">Description</label><input id="fd"></div><div><label for="fa">Amount (₹)</label><input id="fa" type="number"></div></div><button class="btn" onclick="addFin()">Save entry</button></div>`:""}
- <div class="card tw"><table><tr><th>Type</th><th>Description</th><th>Amount</th></tr>${p.fin.map(f=>`<tr><td>${f.k}</td><td>${esc(f.d)}</td><td>₹${f.a}</td></tr>`).join("")||`<tr><td colspan="3" class="mut">No entries yet.</td></tr>`}</table></div>`},
-Certificates(p){if(!apd(p))return gate(p);
- const el=p.parts.map((x,i)=>[x,i]).filter(([x,i])=>x.s==="Confirmed"&&pct(p,i)>=75);
- return `<div class="card"><p class="mut">Participants with at least 75% attendance are eligible.${p.status==="Completed"||p.status==="Closed"?"":" Certificates unlock once the programme is marked completed."}</p>${el.map(([x,i])=>`<p>${esc(x.n)} (${pct(p,i)}%) ${p.status==="Completed"||p.status==="Closed"?`<button class="btn o" onclick="cert(${i})">View certificate</button>`:""}</p>`).join("")||`<p class="mut">No eligible participants yet.</p>`}</div>`}};
-function pct(p,i){const d=days(p),a=p.att[i]||{};return Math.round(Object.values(a).filter(Boolean).length/d*100)}
-function submitP(){const p=P(sel);if(!p.title||!p.start||!p.end||!p.venue){alert("Add a title, dates and venue before submitting.");return}
- p.status="Under Approval";p.step=0;p.hist.push({r:"Coordinator",a:"Submitted (revision "+p.rev+")",t:now(),c:""});log(p,"Submitted for approval");render()}
-function act(a){const p=P(sel),c=$("#cm").value;if(a!=="Approved"&&!c.trim()){alert("Add a comment explaining your decision.");return}
- p.hist.push({r:S.chain[p.step],a,t:now(),c});
- if(a==="Approved"){p.step++;if(p.step>=S.chain.length)p.status="Approved"}else{p.status=a;p.step=0}
- log(p,a+" by "+role);render()}
-function adv(s){const p=P(sel);p.status=s;log(p,"Status changed to "+s);render()}
-function dup(){const p=P(sel),n=JSON.parse(JSON.stringify(p));Object.assign(n,{id:"P"+S.n++,title:p.title+" (copy)",status:"Draft",step:0,rev:1,hist:[],parts:[],att:{},fb:[],fin:[],comms:[]});S.progs.push(n);log(n,"Duplicated from "+p.title);go("detail",n.id)}
-function shared(c){const p=P(sel);p.comms.push({c,t:now()});log(p,"Announcement shared on "+c);render()}
-function addPart(){const p=P(sel),n=$("#pn").value.trim();if(!n){alert("Enter the participant’s name.");return}
- p.parts.push({n,e:$("#pe").value,o:$("#po").value,s:"Registered"});log(p,"Registered "+n);render()}
-function conf(i){const p=P(sel),c=p.parts.filter(x=>x.s==="Confirmed").length;p.parts[i].s=(!p.seats||c<+p.seats)?"Confirmed":"Waitlisted";log(p,p.parts[i].n+" "+p.parts[i].s);render()}
-function mark(i,k,v){const p=P(sel);(p.att[i]=p.att[i]||{})[k]=v;save();render()}
-function addFb(){const p=P(sel);p.fb.push({c:+$("#fb_c").value,r:+$("#fb_r").value,o:+$("#fb_o").value,t:$("#fb_t").value});log(p,"Feedback added");render()}
-function addFin(){const p=P(sel),a=+$("#fa").value;if(!a||!$("#fd").value){alert("Enter a description and an amount.");return}
- p.fin.push({k:$("#fk").value,d:$("#fd").value,a});log(p,$("#fk").value+" of ₹"+a+" recorded");render()}
-function showDoc(h){$("#doc").innerHTML=h;$("#ov").classList.add("on")}
-function showProposal(){const p=P(sel),L=s=>esc(s).replace(/\n/g,"<br>")||"-";
- showDoc(`<h1>${esc(p.title)}</h1><p>${esc(p.cat)} organized by ${esc(p.dept)}<br>${esc(p.start)} to ${esc(p.end)} (${days(p)} days, ${esc(p.hours)||"-"} hours), ${esc(p.mode)}<br>Venue: ${esc(p.venue)}<br>Coordinator: ${esc(p.coord)}${p.cocoord?" and "+esc(p.cocoord):""}</p>
- <h2>Objectives</h2><p>${L(p.obj)}</p><h2>Scope and target participants</h2><p>${L(p.aud)}. Eligibility: ${L(p.elig)}. Expected participants: ${esc(p.seats)||"-"}</p><h2>Methodology</h2><p>${L(p.desc)}</p><h2>Schedule</h2><p>${L(p.sched)}</p><h2>Resource persons</h2><p>${L(p.rp)}</p><h2>Expected outcomes</h2><p>${L(p.out)}</p><h2>Requirements</h2><p>${L(p.req)}</p>
- <h2>Budget</h2><p>Estimated expenditure: ₹${+p.bexp||0}<br>Estimated revenue: ₹${+p.binc||0}<br>Net financial implication: ₹${(+p.binc||0)-(+p.bexp||0)}</p>
- <h2>Recommendations and approvals</h2>${p.hist.map(h=>`<p>${h.r}: ${h.a} on ${h.t}. ${esc(h.c)}</p>`).join("")||"<p>Pending.</p>"}`)}
-function showLetter(){const p=P(sel),l=p.hist[p.hist.length-1];
- showDoc(`<h1>Approval letter and office order</h1><p>Date: ${new Date().toLocaleDateString()}</p><p>The competent authority has approved the conduct of <b>${esc(p.title)}</b> from ${esc(p.start)} to ${esc(p.end)} at ${esc(p.venue)}, organized by ${esc(p.dept)}, with an estimated expenditure of ₹${+p.bexp||0}.</p><p>${esc(p.coord)} is appointed Programme Coordinator. The Finance Section shall release funds as per sanctioned budget.</p><p>Final approval: ${l?l.r+", "+l.t:"-"}</p>`)}
-function cert(i){const p=P(sel),x=p.parts[i];showDoc(`<div class="cert"><h1>Certificate of Participation</h1><p>This is to certify that</p><h2>${esc(x.n)}</h2><p>${esc(x.o)}</p><p>participated in <b>${esc(p.title)}</b><br>held from ${esc(p.start)} to ${esc(p.end)}<br>organized by ${esc(p.dept)}</p><p class="mut">Certificate no. ${p.id}-${String(i+1).padStart(3,"0")}</p><p>${esc(p.coord)}<br>Programme Coordinator</p></div>`)}
-load();render();
-</script></body></html>
+ ${ed ? `<button class="btn o" onclick="go('form')">Edit</button><button class="btn" onclick="submitP()">Submit for approval</button>` : ""}
+ ${nx && role === "Coordinator" ? `<button class="btn" onclick="adv('${nx[1]}')">${nx[0]}</button>` : ""}</div>`
+            },
+            Approval(p) {
+                const my = p.status === "Under Approval" && S.chain[p.step] === role;
+                return `<div class="card"><p>Chain: ${S.chain.map((r, i) => `<span class="b ${p.status === "Under Approval" && i === p.step ? "w" : apd(p) || i < p.step ? "ok" : ""}">${r}</span>`).join(" → ")}</p>
+ ${my ? `<label for="cm">Comment</label><textarea id="cm" rows="2"></textarea><button class="btn" onclick="act('Approved')">Approve and forward</button><button class="btn o" onclick="act('Returned')">Return for modification</button><button class="btn d" onclick="act('Rejected')">Reject</button>` : `<p class="mut">${p.status === "Under Approval" ? "Waiting for " + S.chain[p.step] + "." : "Status: " + p.status + "."}</p>`}</div>
+ <div class="card"><h3>Approval history</h3>${p.hist.map(h => `<div class="hist"><b>${h.r}</b>: ${h.a} <span class="mut">${h.t}</span><br>${esc(h.c)}</div>`).join("") || `<p class="mut">No actions recorded yet.</p>`}</div>
+ ${apd(p) ? `<div class="card"><button class="btn o" onclick="showLetter()">Approval letter and office order</button></div>` : ""}`
+            },
+            Publicity(p) {
+                if (!apd(p)) return gate(p);
+                const t = `${p.title}\n${p.start} to ${p.end} (${p.mode}) at ${p.venue}\nFor: ${p.aud}\nFee: ₹${p.fee || 0}\nOrganized by ${p.dept}. Coordinator: ${p.coord}.`;
+                const ch = ["Email", "WhatsApp", "SMS", "Website", "LinkedIn", "Facebook", "Instagram"];
+                return `<div class="card"><h3>Announcement text</h3><textarea rows="6" readonly onclick="this.select()">${esc("You are invited to " + t)}</textarea><p class="mut">Copy this text into each channel, then record it below. Direct publishing needs each platform’s API approval.</p>${ch.map(c => `<button class="btn o" onclick="shared('${c}')">Mark shared on ${c}</button>`).join("")}</div>
+ <div class="card"><h3>Communication log</h3>${p.comms.map(c => `<div class="hist">${c.c} <span class="mut">${c.t}</span></div>`).join("") || `<p class="mut">Nothing shared yet.</p>`}</div>`
+            },
+            Registration(p) {
+                if (!apd(p)) return gate(p);
+                const conf = p.parts.filter(x => x.s === "Confirmed").length;
+                return `<div class="card"><p>Seats: ${conf} confirmed of ${p.seats || "unlimited"}. <span class="b">${p.status}</span></p>
+ ${p.status === "Approved" && role === "Coordinator" ? `<button class="btn" onclick="adv('Registration Open')">Open registration</button>` : ""}</div>
+ ${ORD.indexOf(p.status) >= 5 && p.status !== "Closed" ? `<div class="card"><h3>Register participant</h3><div class="f2"><div><label for="pn">Name</label><input id="pn"></div><div><label for="pe">Email</label><input id="pe" type="email"></div><div><label for="po">Organization</label><input id="po"></div></div><button class="btn" onclick="addPart()">Add registration</button></div>` : ""}
+ <div class="card tw"><table><tr><th>Name</th><th>Email</th><th>Organization</th><th>Status</th><th></th></tr>${p.parts.map((x, i) => `<tr><td>${esc(x.n)}</td><td>${esc(x.e)}</td><td>${esc(x.o)}</td><td><span class="b ${x.s === "Confirmed" ? "ok" : "w"}">${x.s}</span></td><td>${role === "Coordinator" && x.s !== "Confirmed" ? `<button class="btn o" onclick="conf(${i})">Confirm</button>` : ""}</td></tr>`).join("") || `<tr><td colspan="5" class="mut">No registrations yet.</td></tr>`}</table></div>`
+            },
+            Attendance(p) {
+                if (!apd(p)) return gate(p);
+                const cf = p.parts.map((x, i) => [x, i]).filter(([x]) => x.s === "Confirmed"), d = days(p);
+                return `<div class="card tw"><table><tr><th>Participant</th>${Array.from({ length: d }, (_, i) => `<th>Day ${i + 1}</th>`).join("")}<th>Attended</th></tr>${cf.map(([x, i]) => `<tr><td>${esc(x.n)}</td>${Array.from({ length: d }, (_, k) => `<td><input type="checkbox" style="width:auto" ${(p.att[i] || {})[k] ? "checked" : ""} ${role === "Coordinator" ? "" : "disabled"} onchange="mark(${i},${k},this.checked)" aria-label="Day ${k + 1}"></td>`).join("")}<td>${pct(p, i)}%</td></tr>`).join("") || `<tr><td class="mut">Confirm participants first.</td></tr>`}</table></div>`
+            },
+            Feedback(p) {
+                if (!apd(p)) return gate(p);
+                const av = k => p.fb.length ? (p.fb.reduce((a, f) => a + f[k], 0) / p.fb.length).toFixed(1) : "-";
+                return `<div class="card"><h3>Average ratings (${p.fb.length} responses)</h3><div class="grid"><div>Content <div class="stat">${av("c")}</div></div><div>Resource persons <div class="stat">${av("r")}</div></div><div>Organization <div class="stat">${av("o")}</div></div></div></div>
+ <div class="card"><h3>Add feedback</h3><div class="f2">${[["c", "Content"], ["r", "Resource persons"], ["o", "Organization"]].map(([k, l]) => `<div><label for="fb_${k}">${l} (1 to 5)</label><input id="fb_${k}" type="number" min="1" max="5" value="5"></div>`).join("")}</div><label for="fb_t">Comments</label><textarea id="fb_t" rows="2"></textarea><button class="btn" onclick="addFb()">Save feedback</button>${p.fb.map(f => f.t ? `<div class="hist">${esc(f.t)}</div>` : "").join("")}</div>`
+            },
+            Finance(p) {
+                if (!apd(p)) return gate(p);
+                const conf = p.parts.filter(x => x.s === "Confirmed").length, inc = conf * (+p.fee || 0) + p.fin.filter(f => f.k === "Income").reduce((a, f) => a + f.a, 0), ex = p.fin.filter(f => f.k === "Expense").reduce((a, f) => a + f.a, 0);
+                return `<div class="grid"><div class="card"><div class="mut">Budgeted expenditure</div><div class="stat">₹${+p.bexp || 0}</div><div class="mut">Actual: ₹${ex}</div></div><div class="card"><div class="mut">Budgeted revenue</div><div class="stat">₹${+p.binc || 0}</div><div class="mut">Actual: ₹${inc} (fees ₹${conf * (+p.fee || 0)} + other)</div></div><div class="card"><div class="mut">Balance</div><div class="stat" style="color:${inc - ex < 0 ? "var(--bad)" : "var(--ok)"}">₹${inc - ex}</div>${ex > (+p.bexp || 0) ? `<div class="b bad">Over budget</div>` : ""}</div></div>
+ ${role === "Finance" || role === "Coordinator" ? `<div class="card"><h3>Add entry</h3><div class="f2"><div><label for="fk">Type</label><select id="fk"><option>Expense</option><option>Income</option></select></div><div><label for="fd">Description</label><input id="fd"></div><div><label for="fa">Amount (₹)</label><input id="fa" type="number"></div></div><button class="btn" onclick="addFin()">Save entry</button></div>` : ""}
+ <div class="card tw"><table><tr><th>Type</th><th>Description</th><th>Amount</th></tr>${p.fin.map(f => `<tr><td>${f.k}</td><td>${esc(f.d)}</td><td>₹${f.a}</td></tr>`).join("") || `<tr><td colspan="3" class="mut">No entries yet.</td></tr>`}</table></div>`
+            },
+            Certificates(p) {
+                if (!apd(p)) return gate(p);
+                const el = p.parts.map((x, i) => [x, i]).filter(([x, i]) => x.s === "Confirmed" && pct(p, i) >= 75);
+                return `<div class="card"><p class="mut">Participants with at least 75% attendance are eligible.${p.status === "Completed" || p.status === "Closed" ? "" : " Certificates unlock once the programme is marked completed."}</p>${el.map(([x, i]) => `<p>${esc(x.n)} (${pct(p, i)}%) ${p.status === "Completed" || p.status === "Closed" ? `<button class="btn o" onclick="cert(${i})">View certificate</button>` : ""}</p>`).join("") || `<p class="mut">No eligible participants yet.</p>`}</div>`
+            }
+        };
+        function pct(p, i) { const d = days(p), a = p.att[i] || {}; return Math.round(Object.values(a).filter(Boolean).length / d * 100) }
+        function submitP() {
+            const p = P(sel); if (!p.title || !p.start || !p.end || !p.venue) { alert("Add a title, dates and venue before submitting."); return }
+            p.status = "Under Approval"; p.step = 0; p.hist.push({ r: "Coordinator", a: "Submitted (revision " + p.rev + ")", t: now(), c: "" }); log(p, "Submitted for approval"); render()
+        }
+        function act(a) {
+            const p = P(sel), c = $("#cm").value; if (a !== "Approved" && !c.trim()) { alert("Add a comment explaining your decision."); return }
+            p.hist.push({ r: S.chain[p.step], a, t: now(), c });
+            if (a === "Approved") { p.step++; if (p.step >= S.chain.length) p.status = "Approved" } else { p.status = a; p.step = 0 }
+            log(p, a + " by " + role); render()
+        }
+        function adv(s) { const p = P(sel); p.status = s; log(p, "Status changed to " + s); render() }
+        function dup() { const p = P(sel), n = JSON.parse(JSON.stringify(p)); Object.assign(n, { id: "P" + S.n++, title: p.title + " (copy)", status: "Draft", step: 0, rev: 1, hist: [], parts: [], att: {}, fb: [], fin: [], comms: [] }); S.progs.push(n); log(n, "Duplicated from " + p.title); go("detail", n.id) }
+        function shared(c) { const p = P(sel); p.comms.push({ c, t: now() }); log(p, "Announcement shared on " + c); render() }
+        function addPart() {
+            const p = P(sel), n = $("#pn").value.trim(); if (!n) { alert("Enter the participant’s name."); return }
+            p.parts.push({ n, e: $("#pe").value, o: $("#po").value, s: "Registered" }); log(p, "Registered " + n); render()
+        }
+        function conf(i) { const p = P(sel), c = p.parts.filter(x => x.s === "Confirmed").length; p.parts[i].s = (!p.seats || c < +p.seats) ? "Confirmed" : "Waitlisted"; log(p, p.parts[i].n + " " + p.parts[i].s); render() }
+        function mark(i, k, v) { const p = P(sel); (p.att[i] = p.att[i] || {})[k] = v; save(); render() }
+        function addFb() { const p = P(sel); p.fb.push({ c: +$("#fb_c").value, r: +$("#fb_r").value, o: +$("#fb_o").value, t: $("#fb_t").value }); log(p, "Feedback added"); render() }
+        function addFin() {
+            const p = P(sel), a = +$("#fa").value; if (!a || !$("#fd").value) { alert("Enter a description and an amount."); return }
+            p.fin.push({ k: $("#fk").value, d: $("#fd").value, a }); log(p, $("#fk").value + " of ₹" + a + " recorded"); render()
+        }
+        function showDoc(h) { $("#doc").innerHTML = h; $("#ov").classList.add("on") }
+        function showProposal() {
+            const p = P(sel), L = s => esc(s).replace(/\n/g, "<br>") || "-";
+            showDoc(`<h1>${esc(p.title)}</h1><p>${esc(p.cat)} organized by ${esc(p.dept)}<br>${esc(p.start)} to ${esc(p.end)} (${days(p)} days, ${esc(p.hours) || "-"} hours), ${esc(p.mode)}<br>Venue: ${esc(p.venue)}<br>Coordinator: ${esc(p.coord)}${p.cocoord ? " and " + esc(p.cocoord) : ""}</p>
+ <h2>Objectives</h2><p>${L(p.obj)}</p><h2>Scope and target participants</h2><p>${L(p.aud)}. Eligibility: ${L(p.elig)}. Expected participants: ${esc(p.seats) || "-"}</p><h2>Methodology</h2><p>${L(p.desc)}</p><h2>Schedule</h2><p>${L(p.sched)}</p><h2>Resource persons</h2><p>${L(p.rp)}</p><h2>Expected outcomes</h2><p>${L(p.out)}</p><h2>Requirements</h2><p>${L(p.req)}</p>
+ <h2>Budget</h2><p>Estimated expenditure: ₹${+p.bexp || 0}<br>Estimated revenue: ₹${+p.binc || 0}<br>Net financial implication: ₹${(+p.binc || 0) - (+p.bexp || 0)}</p>
+ <h2>Recommendations and approvals</h2>${p.hist.map(h => `<p>${h.r}: ${h.a} on ${h.t}. ${esc(h.c)}</p>`).join("") || "<p>Pending.</p>"}`)
+        }
+        function showLetter() {
+            const p = P(sel), l = p.hist[p.hist.length - 1];
+            showDoc(`<h1>Approval letter and office order</h1><p>Date: ${new Date().toLocaleDateString()}</p><p>The competent authority has approved the conduct of <b>${esc(p.title)}</b> from ${esc(p.start)} to ${esc(p.end)} at ${esc(p.venue)}, organized by ${esc(p.dept)}, with an estimated expenditure of ₹${+p.bexp || 0}.</p><p>${esc(p.coord)} is appointed Programme Coordinator. The Finance Section shall release funds as per sanctioned budget.</p><p>Final approval: ${l ? l.r + ", " + l.t : "-"}</p>`)
+        }
+        function cert(i) { const p = P(sel), x = p.parts[i]; showDoc(`<div class="cert"><h1>Certificate of Participation</h1><p>This is to certify that</p><h2>${esc(x.n)}</h2><p>${esc(x.o)}</p><p>participated in <b>${esc(p.title)}</b><br>held from ${esc(p.start)} to ${esc(p.end)}<br>organized by ${esc(p.dept)}</p><p class="mut">Certificate no. ${p.id}-${String(i + 1).padStart(3, "0")}</p><p>${esc(p.coord)}<br>Programme Coordinator</p></div>`) }
+        load(); render();
+    </script>
+</body>
+
+</html>
